@@ -10,6 +10,8 @@ export interface TaskItem {
   priority: TaskPriority;
   status: TaskStatus;
   projectId?: string;
+  stageId?: string;
+  milestoneId?: string;
   workspace?: string;
   folder?: string;
   assignee?: string;
@@ -45,9 +47,13 @@ export interface CalendarEvent {
 export interface Milestone {
   id: string;
   title: string;
+  targetDate?: string;
   deadlineDays?: number;
   completed?: boolean;
+  color?: string;
 }
+
+export type ProjectStatus = 'open' | 'in_progress' | 'completed' | 'on_hold';
 
 export interface ProjectItem {
   id: string;
@@ -55,8 +61,13 @@ export interface ProjectItem {
   description: string;
   color?: string;
   targetDate?: string;
-  milestones?: Milestone[];
+  startDate?: string;
+  status?: ProjectStatus;
+  priority?: TaskPriority;
+  assignee?: string;
   workspace?: string;
+  folder?: string;
+  milestones?: Milestone[];
   createdAt: number;
 }
 

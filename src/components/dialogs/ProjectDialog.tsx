@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useApp } from '../../context/AppContext';
 import {
   Search,
@@ -23,17 +23,54 @@ import {
   Plus,
   X,
   Edit2,
+  Check,
 } from 'lucide-react';
+import { ProjectItem, ProjectStatus, TaskPriority } from '../../types';
 
 export default function ProjectDialog() {
-  const { dialogOpen, dialogData, closeDialog, createProject, openDialog } = useApp();
+  const { dialogOpen, dialogData, closeDialog, createProject, updateProject, openDialog } = useApp();
 
-  const [step, setStep] = useState<'chooser' | 'scratch'>('chooser');
+  const isEditing = Boolean(dialogData?.id);
+  const [step, setStep] = useState<'chooser' | 'scratch'>(isEditing ? 'scratch' : 'chooser');
+
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
-  const [priority, setPriority] = useState('Medium');
+  const [priority, setPriority] = useState<TaskPriority>('medium');
+  const [status, setStatus] = useState<ProjectStatus>('open');
+  const [assignee, setAssignee] = useState('ES');
+  const [startDate, setStartDate] = useState('2026-09-15');
   const [deadline, setDeadline] = useState('2026-10-15');
-  const [color, setColor] = useState('Gray');
+  const [workspace, setWorkspace] = useState('My Private Workspace');
+  const [folder, setFolder] = useState('Video editing');
+  const [color, setColor] = useState('#4b5563');
+
+  useEffect(() => {
+    if (dialogData?.id) {
+      setStep('scratch');
+      setName(dialogData.name || '');
+      setDescription(dialogData.description || '');
+      setPriority(dialogData.priority || 'medium');
+      setStatus(dialogData.status || 'open');
+      setAssignee(dialogData.assignee || 'ES');
+      setStartDate(dialogData.startDate || '2026-09-15');
+      setDeadline(dialogData.targetDate || '2026-10-15');
+      setWorkspace(dialogData.workspace || 'My Private Workspace');
+      setFolder(dialogData.folder || 'Video editing');
+      setColor(dialogData.color || '#4b5563');
+    } else {
+      setStep('chooser');
+      setName('');
+      setDescription('');
+      setPriority('medium');
+      setStatus('open');
+      setAssignee('ES');
+      setStartDate('2026-09-15');
+      setDeadline('2026-10-15');
+      setWorkspace('My Private Workspace');
+      setFolder('No folder');
+      setColor('#4b5563');
+    }
+  }, [dialogData, dialogOpen]);
 
   if (dialogOpen !== 'project') return null;
 
@@ -43,24 +80,44 @@ export default function ProjectDialog() {
     setStep('scratch');
   };
 
-  const handleCreateScratch = (e: React.FormEvent) => {
+  const handleSaveProject = (e: React.FormEvent) => {
     e.preventDefault();
     if (!name.trim()) return;
 
-    createProject({
-      name: name.trim(),
-      description: description.trim(),
-      color: '#4b5563',
-      targetDate: deadline,
-    });
+    if (isEditing && dialogData?.id) {
+      updateProject(dialogData.id, {
+        name: name.trim(),
+        description: description.trim(),
+        priority,
+        status,
+        assignee,
+        startDate,
+        targetDate: deadline,
+        workspace,
+        folder,
+        color,
+      });
+    } else {
+      createProject({
+        name: name.trim(),
+        description: description.trim(),
+        priority,
+        status,
+        assignee,
+        startDate,
+        targetDate: deadline,
+        workspace,
+        folder,
+        color,
+      });
+    }
     closeDialog();
-    setStep('chooser');
   };
 
   return (
     <div className="motion-drawer-overlay" onClick={closeDialog}>
       {step === 'chooser' ? (
-        /* Screenshot 3: Create project modal */
+        /* Choose Template / Scratch Modal */
         <div
           style={{
             background: '#ffffff',
@@ -81,7 +138,7 @@ export default function ProjectDialog() {
             </button>
           </div>
 
-          {/* Search bar & Workspace dropdown matching Screenshot 3 */}
+          {/* Search bar & Workspace dropdown */}
           <div style={{ display: 'flex', gap: '10px', marginBottom: '24px' }}>
             <div
               style={{
@@ -114,7 +171,7 @@ export default function ProjectDialog() {
             </button>
           </div>
 
-          {/* Top 2 Action Cards matching Screenshot 3 */}
+          {/* Top 2 Action Cards */}
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '28px' }}>
             {/* Card 1: AI Template */}
             <div
@@ -239,7 +296,7 @@ export default function ProjectDialog() {
                   Blog Post Announcement Procedure
                 </div>
                 <div style={{ fontSize: '11px', color: '#9ca3af', marginTop: '2px' }}>
-                  No Description provided
+                  Standard draft, review, and social publishing procedure
                 </div>
               </div>
 
@@ -268,14 +325,14 @@ export default function ProjectDialog() {
                   YouTube Video Review Process
                 </div>
                 <div style={{ fontSize: '11px', color: '#9ca3af', marginTop: '2px' }}>
-                  No Description provided
+                  Screen captures, audio master, thumbnail A/B testing
                 </div>
               </div>
             </div>
           </div>
         </div>
       ) : (
-        /* Screenshot 4: Create project from scratch editor */
+        /* Accurate Scratch / Project Info Editor Drawer */
         <div
           className="motion-task-drawer"
           onClick={(e) => e.stopPropagation()}
@@ -285,14 +342,19 @@ export default function ProjectDialog() {
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '14px' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '13px', color: '#6b7280' }}>
                 <Box size={16} />
+                <span>{isEditing ? 'Edit Project' : 'New Project'}</span>
               </div>
 
               <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                <button type="button" className="formatting-btn" style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                <button
+                  type="button"
+                  className="formatting-btn"
+                  style={{ display: 'flex', alignItems: 'center', gap: '4px' }}
+                >
                   <Puzzle size={13} />
                   <span>Use template</span>
                 </button>
-                <button type="button" className="formatting-btn" onClick={() => setStep('chooser')}>
+                <button type="button" className="formatting-btn" onClick={closeDialog}>
                   <X size={16} />
                 </button>
               </div>
@@ -335,7 +397,7 @@ export default function ProjectDialog() {
             <textarea
               value={description}
               onChange={(e) => setDescription(e.target.value)}
-              placeholder="Description"
+              placeholder="Project documentation, goals, and workflow description..."
               style={{
                 width: '100%',
                 flex: 1,
@@ -350,43 +412,107 @@ export default function ProjectDialog() {
             />
           </div>
 
-          {/* Right Panel matching Screenshot 4 */}
+          {/* Right Panel with ALL EDITABLE PROPERTIES */}
           <div className="task-drawer-meta">
             <div style={{ fontSize: '11px', fontWeight: 600, color: '#9ca3af', textTransform: 'uppercase' }}>
-              Workspace
+              Workspace & Folder
             </div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '12px', fontWeight: 500, color: '#374151' }}>
-              <Box size={14} style={{ color: '#4b5563' }} />
-              <span>My Private Workspace</span>
-            </div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '12px', color: '#6b7280' }}>
-              <Folder size={14} style={{ color: '#9ca3af' }} />
-              <span>No folder</span>
-            </div>
+
+            {/* Workspace Select */}
+            <select
+              value={workspace}
+              onChange={(e) => setWorkspace(e.target.value)}
+              style={{
+                fontSize: '12px',
+                fontWeight: 500,
+                color: '#374151',
+                border: '1px solid #e5e7eb',
+                borderRadius: '6px',
+                padding: '4px 6px',
+                background: '#ffffff',
+                outline: 'none',
+              }}
+            >
+              <option value="My Private Workspace">My Private Workspace</option>
+              <option value="YouTube Video Launch Workspace">YouTube Video Launch Workspace</option>
+              <option value="Launching a blogpost">Launching a blogpost</option>
+            </select>
+
+            {/* Folder Select */}
+            <select
+              value={folder}
+              onChange={(e) => setFolder(e.target.value)}
+              style={{
+                fontSize: '12px',
+                color: '#6b7280',
+                border: '1px solid #e5e7eb',
+                borderRadius: '6px',
+                padding: '4px 6px',
+                background: '#ffffff',
+                outline: 'none',
+              }}
+            >
+              <option value="Video editing">Video editing</option>
+              <option value="No folder">No folder</option>
+              <option value="Production">Production</option>
+              <option value="Marketing">Marketing</option>
+            </select>
 
             <div style={{ height: '1px', background: '#e5e7eb', margin: '4px 0' }} />
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+              {/* Assignee */}
               <div className="meta-field-row">
                 <span className="meta-field-label">Assignee:</span>
-                <div className="meta-field-value">
-                  <span style={{ width: '14px', height: '14px', borderRadius: '50%', background: '#10b981', color: '#fff', fontSize: '8px', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700 }}>
-                    M
-                  </span>
-                  <span>Motion</span>
-                </div>
+                <select
+                  value={assignee}
+                  onChange={(e) => setAssignee(e.target.value)}
+                  style={{
+                    border: '1px solid #e5e7eb',
+                    borderRadius: '4px',
+                    padding: '2px 6px',
+                    fontSize: '11px',
+                    background: '#ffffff',
+                  }}
+                >
+                  <option value="ES">Ethan (ES)</option>
+                  <option value="Motion">Motion (M)</option>
+                </select>
               </div>
 
+              {/* Status */}
               <div className="meta-field-row">
                 <span className="meta-field-label">Status:</span>
-                <span className="meta-field-value">⭕ Todo</span>
+                <select
+                  value={status}
+                  onChange={(e) => setStatus(e.target.value as ProjectStatus)}
+                  style={{
+                    border: '1px solid #e5e7eb',
+                    borderRadius: '4px',
+                    padding: '2px 6px',
+                    fontSize: '11px',
+                    background: '#ffffff',
+                  }}
+                >
+                  <option value="open">🟢 Open</option>
+                  <option value="in_progress">🔵 In Progress</option>
+                  <option value="completed">✅ Completed</option>
+                  <option value="on_hold">⏸ On Hold</option>
+                </select>
               </div>
 
+              {/* Start Date */}
               <div className="meta-field-row">
                 <span className="meta-field-label">Start date:</span>
-                <span className="meta-field-value">📅 Today</span>
+                <input
+                  type="date"
+                  value={startDate}
+                  onChange={(e) => setStartDate(e.target.value)}
+                  style={{ border: '1px solid #e5e7eb', borderRadius: '4px', padding: '1px 4px', fontSize: '11px' }}
+                />
               </div>
 
+              {/* Deadline */}
               <div className="meta-field-row">
                 <span className="meta-field-label">Deadline:</span>
                 <input
@@ -397,29 +523,49 @@ export default function ProjectDialog() {
                 />
               </div>
 
+              {/* Priority */}
               <div className="meta-field-row">
                 <span className="meta-field-label">Priority:</span>
-                <span className="meta-field-value">🚩 {priority}</span>
+                <select
+                  value={priority}
+                  onChange={(e) => setPriority(e.target.value as TaskPriority)}
+                  style={{
+                    border: '1px solid #e5e7eb',
+                    borderRadius: '4px',
+                    padding: '2px 6px',
+                    fontSize: '11px',
+                    background: '#ffffff',
+                  }}
+                >
+                  <option value="urgent">🚩 Urgent</option>
+                  <option value="high">🚩 High</option>
+                  <option value="medium">🚩 Medium</option>
+                  <option value="normal">🚩 Normal</option>
+                  <option value="low">🚩 Low</option>
+                </select>
               </div>
 
+              {/* Color */}
               <div className="meta-field-row">
                 <span className="meta-field-label">Color:</span>
-                <span className="meta-field-value">⬛ {color}</span>
+                <select
+                  value={color}
+                  onChange={(e) => setColor(e.target.value)}
+                  style={{
+                    border: '1px solid #e5e7eb',
+                    borderRadius: '4px',
+                    padding: '2px 6px',
+                    fontSize: '11px',
+                    background: '#ffffff',
+                  }}
+                >
+                  <option value="#4b5563">⬛ Gray</option>
+                  <option value="#2563eb">🟦 Blue</option>
+                  <option value="#8b5cf6">🟪 Purple</option>
+                  <option value="#10b981">🟩 Green</option>
+                  <option value="#f59e0b">🟧 Orange</option>
+                </select>
               </div>
-
-              <div className="meta-field-row">
-                <span className="meta-field-label">Labels:</span>
-                <span style={{ color: '#9ca3af' }}>None</span>
-              </div>
-
-              <button
-                type="button"
-                className="formatting-btn"
-                style={{ justifyContent: 'flex-start', padding: '4px 0', color: '#6b7280' }}
-              >
-                <Plus size={13} />
-                <span>Add custom field</span>
-              </button>
             </div>
 
             <div style={{ marginTop: 'auto', paddingTop: '16px', borderTop: '1px solid #e5e7eb' }}>
@@ -427,9 +573,9 @@ export default function ProjectDialog() {
                 type="button"
                 className="btn-motion-new"
                 style={{ width: '100%', margin: 0 }}
-                onClick={handleCreateScratch}
+                onClick={handleSaveProject}
               >
-                Create Project
+                {isEditing ? 'Save Changes' : 'Create Project'}
               </button>
             </div>
           </div>
