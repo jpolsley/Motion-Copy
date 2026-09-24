@@ -1,0 +1,6 @@
+{
+  "name": "Kin Studio",
+  "description": "AI-powered productivity and project management workspace with intelligent auto-scheduling, calendar time-blocking, meeting booking, and connected notes.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
